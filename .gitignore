@@ -51,9 +51,6 @@ sysinfo.txt
 # ========== 保留核心内容 ==========
 # 忽略整个 Assets 文件夹
 
-# 然后允许关键文件夹和 meta 文件
-!Assets/
-!Assets/Scripts/**
-!Assets/Scenes/**
-!Assets/**/*.meta
-/Assets/Art
+# Auto-generated scenes by play mode tests
+/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+Assets/Arts/
