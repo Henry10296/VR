@@ -1,0 +1,56 @@
+# =============== #
+# Unity GitIgnore #
+# =============== #
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.user
+*.userprefs
+
+# Unity specific
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild*/
+[Ll]ogs/
+[Mm]emoryCaptures/
+UserSettings/
+sysinfo.txt
+
+# JetBrains Rider
+/Assets/Plugins/Editor/JetBrains*
+
+# Visual Studio
+.vs/
+
+# Rider cache files
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/dictionaries
+.idea/**/shelf/
+.idea/**/dataSources*
+.idea/**/gradle.xml
+.idea/**/libraries/
+
+# Build artifacts
+*.apk
+*.aab
+*.unitypackage
+
+# Temporary backup
+*.bak
+
+# ========== 保留核心内容 ==========
+# 忽略整个 Assets 文件夹
+
+# Auto-generated scenes by play mode tests
+/[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+Assets/Arts/
