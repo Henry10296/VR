@@ -52,7 +52,7 @@ public class ConfigManager : Singleton<ConfigManager>
                     briefingText = "从今天开始，外国公民需要提供工作许可证和指纹验证。",
                     allowedNationalities = new List<string> { "Arstotzka", "Obristan" },
                     requireWorkPermit = true,
-                    requireFingerprint = true,
+                    requireFingerprint = true,   
                     enableDialogue = true,
                     targetNPCCount = 12
                 };
