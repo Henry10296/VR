@@ -3,7 +3,32 @@ guid: 0e1e7a6d4c6b80c4da999921ef14d316
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lambert25
+    second: {fileID: 2100000, guid: 1371c550678987b4490af21803140fba, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lambert30
+    second: {fileID: 2100000, guid: bb4514ba717a882419fe6dd2f3a9875f, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: lambert31
+    second: {fileID: 2100000, guid: f60fef5e6910a30429fa42e15a16d9e4, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Antelia_passport
+    second: {fileID: 2800000, guid: 0a5939390f210a34295d3391355d31ac, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Antelia_passport_b
+    second: {fileID: 2800000, guid: 9aac33ee3bf86a24da852d358a5cd6d0, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
