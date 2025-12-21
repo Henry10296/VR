@@ -9,11 +9,11 @@ public class VR_Button : MonoBehaviour
     public float deadTime = 1f;
     private bool DeadTimeActive = false;
 
-    public UnityEvent onPressed, onRealesed;
+    public UnityEvent onPressed,onRealesed;
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Button") && !DeadTimeActive)
+        if(other.gameObject.CompareTag("Button") && !DeadTimeActive)
         {
             onPressed?.Invoke();
             Debug.Log("I've been pressed");
