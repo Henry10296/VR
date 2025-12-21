@@ -188,7 +188,7 @@ public class InspectionManager : Singleton<InspectionManager>
         
         return isCorrect;
     }
-    public void CallNextNPC()
+    public IEnumerator CallNextNPC()
     {
         if (NPCManager.Instance.HasMoreNPCs())
         {
@@ -206,6 +206,7 @@ public class InspectionManager : Singleton<InspectionManager>
             // 没 NPC 了，切换到结算状态
             GameManager.Instance.ChangeState(GameState.DaySettlement);
         }
+        yield return null;
     }
     public void StartInspection()
     {

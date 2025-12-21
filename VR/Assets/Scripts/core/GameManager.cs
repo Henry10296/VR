@@ -156,15 +156,15 @@ public class GameManager : Singleton<GameManager>
     private void OnEnterWorking() 
     {
         Debug.Log("[GameManager] 进入工作状态");
-        var ui = UnityEngine.Object.FindObjectOfType<DialogueUI>(true);
+        var ui = FindObjectOfType<DialogueUI>(true);
         if (ui != null && !ui.gameObject.activeInHierarchy) { ui.gameObject.SetActive(true); }
     
         // 1. 调用 NPC 管理器生成今天的队列
-        NPCManager.Instance.GenerateDailyNPCs();
+        StartCoroutine(NPCManager.Instance.GenerateDailyNPCs());
     
         // 2. 触发第一个 NPC 进场
         // 这里的逻辑可以写在 InspectionManager 里，也可以直接调用
-        InspectionManager.Instance.CallNextNPC(); 
+        StartCoroutine(InspectionManager.Instance.CallNextNPC()); 
     }
     private void OnEnterDaySettlement()
     {

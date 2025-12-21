@@ -25,7 +25,7 @@ public class NPCManager : Singleton<NPCManager>
     /// <summary>
     /// 生成今日NPC队列
     /// </summary>
-    public void GenerateDailyNPCs()
+    public IEnumerator GenerateDailyNPCs()
     {
         _npcQueue.Clear();
         
@@ -40,6 +40,7 @@ public class NPCManager : Singleton<NPCManager>
         }
         
         Debug.Log($"[NPCManager] Generated {count} NPCs for Day {SessionManager.Instance.currentDay}");
+        yield return null;
     }
     
     /// <summary>
