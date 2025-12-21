@@ -3,7 +3,7 @@ using UnityEngine;
 public class SimpleStamper : MonoBehaviour
 {
     [Tooltip("调节印记的上下位置：如果是负数就是往回拉，如果是正数就是往下推")]
-    public float heightOffset = -0.005f; // 默认设为负数，试试往回拉
+    public float raiseHeight = 0.002f;// 默认设为负数，试试往回拉
     [Header("设置部分")]
     [Tooltip("这里拖入你刚才做好的 Stamp_Mark_Prefab")]
     public GameObject inkMarkPrefab;
@@ -59,7 +59,9 @@ public class SimpleStamper : MonoBehaviour
         // --- 第四步：微调位置 (防闪烁关键) ---
         // 让印记沿着印章的“前方/下方”稍微移动一点点，确保不和纸面重叠
         // 0.001f 是 1毫米
-        newMark.transform.position += transform.forward * heightOffset;
+        // transform.forward 是朝下，用 "-=" 就是朝反方向（朝上）移动
+        // 这样你只需要在面板里填 0.001，印记就会自动往上浮
+        newMark.transform.position -= transform.forward * raiseHeight;
 
         // --- 第五步：父子绑定 (核心) ---
         // 把印记设为护照(target)的子物体。
