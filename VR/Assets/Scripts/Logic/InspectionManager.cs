@@ -204,7 +204,8 @@ public class InspectionManager : Singleton<InspectionManager>
         else
         {
             // 没 NPC 了，切换到结算状态
-            GameManager.Instance.ChangeState(GameState.DaySettlement);
+            if(!NPCManager.Instance.HasMoreNPCs())
+                GameManager.Instance.ChangeState(GameState.DaySettlement);
         }
         yield return null;
     }

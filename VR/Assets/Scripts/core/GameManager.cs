@@ -135,7 +135,7 @@ public class GameManager : Singleton<GameManager>
         EventBus.Publish(EventNames.DAY_STARTED, currentDay);
         if (isActiveAndEnabled)
         {
-            StartCoroutine(AutoStartWorking());
+           // StartCoroutine(AutoStartWorking());
         }
         else if (SessionManager.Instance != null && SessionManager.Instance.isActiveAndEnabled)
         {
@@ -160,11 +160,12 @@ public class GameManager : Singleton<GameManager>
         if (ui != null && !ui.gameObject.activeInHierarchy) { ui.gameObject.SetActive(true); }
     
         // 1. 调用 NPC 管理器生成今天的队列
-        StartCoroutine(NPCManager.Instance.GenerateDailyNPCs());
+        NPCManager.Instance.GenerateDailyNPCs();
+       // StartCoroutine(Wait());
     
         // 2. 触发第一个 NPC 进场
         // 这里的逻辑可以写在 InspectionManager 里，也可以直接调用
-        StartCoroutine(InspectionManager.Instance.CallNextNPC()); 
+        InspectionManager.Instance.CallNextNPC();
     }
     private void OnEnterDaySettlement()
     {
@@ -176,7 +177,10 @@ public class GameManager : Singleton<GameManager>
     }
     
     private void OnExitWorking() { }
-    
-    
+
+    private IEnumerator Wait()
+    {
+        yield return new WaitForSeconds(0.7f);
+    }
     
 }
