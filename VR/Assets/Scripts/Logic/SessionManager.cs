@@ -7,7 +7,7 @@ public class SessionManager : Singleton<SessionManager>
     
     [Header("会话数据")]
     public int currentDay = 0;
-    public int totalMoney = 50;
+    public int totalMoney = 50;  
     public int processedNPCCount = 0;
     public int correctDecisions = 0;
     public int wrongDecisions = 0;
@@ -20,8 +20,8 @@ public class SessionManager : Singleton<SessionManager>
     {
         familyStatus = new FamilyStatus
         {
-            wifeCondition = "健康",
-            childCondition = "饱食",
+            wifeCondition = "Health",
+            childCondition = "hung",
             fatherCondition = "康复中"
         };
         Debug.Log("[SessionManager] Initialized");

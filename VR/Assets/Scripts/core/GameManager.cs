@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 
 
 /// <summary>
@@ -27,6 +27,7 @@ public enum DocumentType
     IDCard,        // 身份证
     EntryPermit    // 入境许可
 }
+
 public class GameManager : Singleton<GameManager>
 {
     [Header("游戏状态")]
@@ -62,6 +63,14 @@ public class GameManager : Singleton<GameManager>
         };
     }
     
+    private void EnsureStateActions()
+    {
+        if (_stateEnterActions == null || _stateExitActions == null)
+        {
+            InitializeStateActions();
+        }
+    }
+    
     /// <summary>
     /// 切换游戏状态
     /// </summary>
@@ -69,9 +78,10 @@ public class GameManager : Singleton<GameManager>
     {
         if (currentState == newState) return;
         
+        EnsureStateActions();
+        
         Debug.Log($"[GameManager] State: {currentState} -> {newState}");
         
-        // 退出旧状态
         if (_stateExitActions.ContainsKey(currentState))
         {
             _stateExitActions[currentState]?.Invoke();
@@ -80,7 +90,6 @@ public class GameManager : Singleton<GameManager>
         GameState oldState = currentState;
         currentState = newState;
         
-        // 进入新状态
         if (_stateEnterActions.ContainsKey(newState))
         {
             _stateEnterActions[newState]?.Invoke();
@@ -94,6 +103,13 @@ public class GameManager : Singleton<GameManager>
     {
         currentDay = 0;
         EventBus.Publish(EventNames.GAME_STARTED, true);
+        SceneManager.sceneLoaded += OnSceneLoadedStartGame;
+        SceneManager.LoadScene("SampleScene");
+    }
+    
+    private void OnSceneLoadedStartGame(Scene scene, LoadSceneMode mode)
+    {
+        SceneManager.sceneLoaded -= OnSceneLoadedStartGame;
         StartNextDay();
     }
     
@@ -105,26 +121,62 @@ public class GameManager : Singleton<GameManager>
         currentDay++;
         ChangeState(GameState.DayBriefing);
     }
-    
+
+    public void StartWork()
+    {
+        ChangeState(GameState.Working                                                                                                                                                                    );
+    }
     // 状态进入/退出回调
     private void OnEnterMainMenu() { }
     
     private void OnEnterDayBriefing()
     {
+        SessionManager.Instance.StartNewDay(currentDay);
         EventBus.Publish(EventNames.DAY_STARTED, currentDay);
+        if (isActiveAndEnabled)
+        {
+            StartCoroutine(AutoStartWorking());
+        }
+        else if (SessionManager.Instance != null && SessionManager.Instance.isActiveAndEnabled)
+        {
+            SessionManager.Instance.StartCoroutine(AutoStartWorking());
+        }
+        else
+        {
+            ChangeState(GameState.Working);
+        }
     }
     
-    private void OnEnterWorking() { }
+    private IEnumerator AutoStartWorking()
+    {
+        yield return new WaitForSeconds(ConfigManager.Instance.npcArriveDelay);
+        ChangeState(GameState.Working);
+    }
     
+    private void OnEnterWorking() 
+    {
+        Debug.Log("[GameManager] 进入工作状态");
+        var ui = UnityEngine.Object.FindObjectOfType<DialogueUI>(true);
+        if (ui != null && !ui.gameObject.activeInHierarchy) { ui.gameObject.SetActive(true); }
+    
+        // 1. 调用 NPC 管理器生成今天的队列
+        NPCManager.Instance.GenerateDailyNPCs();
+    
+        // 2. 触发第一个 NPC 进场
+        // 这里的逻辑可以写在 InspectionManager 里，也可以直接调用
+        InspectionManager.Instance.CallNextNPC(); 
+    }
     private void OnEnterDaySettlement()
     {
         EventBus.Publish(EventNames.DAY_ENDED, currentDay);
     }
-    
     private void OnEnterGameOver()
     {
         EventBus.Publish(EventNames.GAME_OVER, true);
     }
     
     private void OnExitWorking() { }
+    
+    
+    
 }
