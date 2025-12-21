@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class InspectionManager : Singleton<InspectionManager>
 {
+    private NPCProfile _currentNPC;
     protected override void OnInitialize()
     {
         Debug.Log("[InspectionManager] Initialized");
@@ -187,4 +188,59 @@ public class InspectionManager : Singleton<InspectionManager>
         
         return isCorrect;
     }
+    public void CallNextNPC()
+    {
+        if (NPCManager.Instance.HasMoreNPCs())
+        {
+            _currentNPC = NPCManager.Instance.GetNextNPC();
+        
+            if (SessionManager.Instance.currentDayRules != null && SessionManager.Instance.currentDayRules.enableDialogue)
+            {
+                DialogueManager.Instance.StartDialogue(_currentNPC);
+            }
+        
+            Debug.Log($"[Inspection] 下一位：{_currentNPC.name}");
+        }
+        else
+        {
+            // 没 NPC 了，切换到结算状态
+            GameManager.Instance.ChangeState(GameState.DaySettlement);
+        }
+    }
+    public void StartInspection()
+    {
+        CallNextNPC();
+    }
+    public void ProcessDecision(int decisionIndex) // 1为批准, 2为拒绝
+    {
+        if (_currentNPC == null) return;
+
+        DecisionType decision = (DecisionType)decisionIndex;
+    
+        // 调用你现有的验证逻辑
+        bool isCorrect = ValidatePlayerDecision(_currentNPC, decision);
+    
+        // 获取 NPC 反应文本
+        string reaction = DialogueGenerator.GenerateReactionDialogue(decision, _currentNPC.isViolator);
+    
+        // 让对话框显示 NPC 的遗言/反应
+        DialogueManager.Instance.PlaySpecialDialogue(reaction);
+
+        // 延迟一会叫下一个人
+        if (isActiveAndEnabled)
+        {
+            StartCoroutine(WaitAndNext());
+        }
+        else
+        {
+            GameManager.Instance.StartCoroutine(WaitAndNext());
+        }
+    }
+
+    private IEnumerator WaitAndNext()
+    {
+        yield return new WaitForSeconds(2.0f);
+        CallNextNPC();
+    }
+    
 }

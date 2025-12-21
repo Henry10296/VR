@@ -95,6 +95,8 @@ public class DayRules
     public bool requireFingerprint;
     public bool enableDialogue;
     public int targetNPCCount;      // 目标处理人数
+    public string dialogueTemplate;
+    public float violatorProbability;
 }
 
 /// <summary>
