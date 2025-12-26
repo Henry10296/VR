@@ -1,3 +1,4 @@
+/*
 using System;
 using UnityEngine;
 
@@ -95,3 +96,4 @@ public class WindowStopZone : MonoBehaviour
         public bool hasStopped;
     }
 }
+*/
