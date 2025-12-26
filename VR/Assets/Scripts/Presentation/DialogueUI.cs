@@ -11,6 +11,9 @@ public class DialogueUI : MonoBehaviour
 {
     [Header("UI引用")]
     public GameObject dialoguePanel;
+    /// <summary>
+    /// 说话者
+    /// </summary>
     public TextMeshProUGUI speakerNameText;
     public TextMeshProUGUI dialogueText;
     public GameObject choicesPanel;

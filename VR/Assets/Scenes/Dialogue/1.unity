@@ -296,6 +296,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: GameObject
       objectReference: {fileID: 0}
+    - target: {fileID: 4065261003086169812, guid: 362fb41947a8abf46b882b08efa28cf8, type: 3}
+      propertyPath: currentDay
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4065261003086169812, guid: 362fb41947a8abf46b882b08efa28cf8, type: 3}
+      propertyPath: currentState
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8120228854221866737, guid: 362fb41947a8abf46b882b08efa28cf8, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
