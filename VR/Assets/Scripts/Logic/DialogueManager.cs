@@ -16,7 +16,8 @@ public class DialogueManager : Singleton<DialogueManager>
     public bool autoAdvance = false;
     private Coroutine _typingCoroutine;
     private Coroutine _autoCoroutine;
-    
+
+    public DialogueUI DialogueUI;
     // 对话模板库
     private Dictionary<string, DialogueTemplate> _templates = new Dictionary<string, DialogueTemplate>();
     
@@ -121,14 +122,14 @@ public class DialogueManager : Singleton<DialogueManager>
     public void StartDialogue(NPCProfile npc)
     {
         _currentNPC = npc;
-        _isDialogueActive = true;
         
         // 根据当日规则选择对话模板
         string templateName = GetTemplateForDay(SessionManager.Instance.currentDay);
         
-        if (_templates.ContainsKey(templateName))
+        if (_templates.TryGetValue(templateName, out var template))
         {
-            DialogueData firstDialogue = _templates[templateName].dialogues[0];
+            _isDialogueActive = true;
+            DialogueData firstDialogue = template.dialogues[0];
             
             // 替换NPC名字
             firstDialogue.speaker = npc.name;
@@ -138,6 +139,7 @@ public class DialogueManager : Singleton<DialogueManager>
         }
         else
         {
+            _isDialogueActive = false;
             Debug.LogWarning($"[DialogueManager] Template not found: {templateName}");
         }
     }

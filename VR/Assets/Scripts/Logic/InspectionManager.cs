@@ -188,10 +188,11 @@ public class InspectionManager : Singleton<InspectionManager>
         
         return isCorrect;
     }
-    public IEnumerator CallNextNPC()
+    public void CallNextNPC()
     {
         if (NPCManager.Instance.HasMoreNPCs())
         {
+            //获取npc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
             _currentNPC = NPCManager.Instance.GetNextNPC();
         
             if (SessionManager.Instance.currentDayRules != null && SessionManager.Instance.currentDayRules.enableDialogue)
@@ -207,7 +208,7 @@ public class InspectionManager : Singleton<InspectionManager>
             if(!NPCManager.Instance.HasMoreNPCs())
                 GameManager.Instance.ChangeState(GameState.DaySettlement);
         }
-        yield return null;
+        
     }
     public void StartInspection()
     {

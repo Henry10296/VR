@@ -21,7 +21,7 @@ public enum GameState
 /// 证件类型
 /// </summary>
 public enum DocumentType
-{
+{  
     Passport,      // 护照
     WorkPermit,    // 工作许可证
     IDCard,        // 身份证
@@ -124,15 +124,6 @@ public class GameManager : Singleton<GameManager>
 
     public void StartWork()
     {
-        ChangeState(GameState.Working                                                                                                                                                                    );
-    }
-    // 状态进入/退出回调
-    private void OnEnterMainMenu() { }
-    
-    private void OnEnterDayBriefing()
-    {
-        SessionManager.Instance.StartNewDay(currentDay);
-        EventBus.Publish(EventNames.DAY_STARTED, currentDay);
         if (isActiveAndEnabled)
         {
             StartCoroutine(AutoStartWorking());
@@ -145,6 +136,16 @@ public class GameManager : Singleton<GameManager>
         {
             ChangeState(GameState.Working);
         }
+                                                                                                                                                                   
+    }
+    // 状态进入/退出回调
+    private void OnEnterMainMenu() { }
+    
+    private void OnEnterDayBriefing()
+    {
+        SessionManager.Instance.StartNewDay(currentDay);
+        EventBus.Publish(EventNames.DAY_STARTED, currentDay);
+       
     }
     
     private IEnumerator AutoStartWorking()

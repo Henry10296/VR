@@ -65,6 +65,7 @@ public class DialogueUI : MonoBehaviour
         }
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
         if (choicesPanel != null) choicesPanel.SetActive(false);
+        SubscribeToManager();
     }
     
     void OnEnable()
