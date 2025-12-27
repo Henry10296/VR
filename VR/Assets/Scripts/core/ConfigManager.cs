@@ -37,36 +37,42 @@ public class ConfigManager : Singleton<ConfigManager>
                 return new DayRules
                 {
                     dayNumber = 1,
-                    briefingText = "欢迎来到灰墙检查哨站 6 号。今天只需要检查护照基本信息。",
+                    briefingText = "Welcome to Grestin Checkpoint No. 6. Today only basic passport checks are required.",
                     allowedNationalities = new List<string> { "Arstotzka" },
                     requireWorkPermit = false,
                     requireFingerprint = false,
                     enableDialogue = false,
-                    targetNPCCount = 10
+                    targetNPCCount = 10,
+                    dialogueTemplate = "Day1_Simple",
+                    violatorProbability = 0.3f
                 };
                 
             case 2:
                 return new DayRules
                 {
                     dayNumber = 2,
-                    briefingText = "从今天开始，外国公民需要提供工作许可证和指纹验证。",
+                    briefingText = "Starting today, foreign citizens must provide a work permit and fingerprint verification.",
                     allowedNationalities = new List<string> { "Arstotzka", "Obristan" },
                     requireWorkPermit = true,
                     requireFingerprint = true,   
                     enableDialogue = true,
-                    targetNPCCount = 12
+                    targetNPCCount = 12,
+                    dialogueTemplate = "Day2_Purpose",
+                    violatorProbability = 0.35f
                 };
                 
             default:
                 return new DayRules
                 {
                     dayNumber = day,
-                    briefingText = "继续你的工作。",
+                    briefingText = "Continue your work.",
                     allowedNationalities = new List<string> { "Arstotzka" },
                     requireWorkPermit = false,
                     requireFingerprint = false,
                     enableDialogue = false,
-                    targetNPCCount = 10
+                    targetNPCCount = 10,
+                    dialogueTemplate = "Day1_Simple",
+                    violatorProbability = 0.3f
                 };
         }
     }
