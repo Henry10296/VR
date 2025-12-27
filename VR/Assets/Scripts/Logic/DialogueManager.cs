@@ -193,7 +193,7 @@ public class DialogueManager : Singleton<DialogueManager>
         {
             displayText += c;
             OnDialogueTextUpdate?.Invoke(displayText);
-            yield return new WaitForSeconds(typingSpeed);
+            yield return new WaitForSecondsRealtime(typingSpeed);
         }
     }
     
@@ -202,7 +202,7 @@ public class DialogueManager : Singleton<DialogueManager>
     /// </summary>
     private IEnumerator AutoPlayNext(DialogueData dialogue)
     {
-        yield return new WaitForSeconds(dialogue.displayDuration);
+        yield return new WaitForSecondsRealtime(dialogue.displayDuration);
         
         // 查找下一句对话
         string templateName = GetTemplateForDay(SessionManager.Instance.currentDay);
@@ -225,7 +225,7 @@ public class DialogueManager : Singleton<DialogueManager>
     /// </summary>
     private IEnumerator AutoEndDialogue(DialogueData dialogue)
     {
-        yield return new WaitForSeconds(dialogue.displayDuration);
+        yield return new WaitForSecondsRealtime(dialogue.displayDuration);
         EndDialogue();
     }
     

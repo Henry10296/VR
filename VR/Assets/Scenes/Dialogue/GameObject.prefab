@@ -112,6 +112,8 @@ MonoBehaviour:
     requireFingerprint: 0
     enableDialogue: 0
     targetNPCCount: 0
+    dialogueTemplate: 
+    violatorProbability: 0
   familyStatus:
     wifeCondition: 
     childCondition: 
@@ -166,3 +168,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   defaultDisplayDuration: 3
   typingSpeed: 0.05
+  autoAdvance: 0
+  DialogueUI: {fileID: 709123098196627196, guid: 4ea1d94ff7fc30b45b2c5402bcebc59e, type: 3}

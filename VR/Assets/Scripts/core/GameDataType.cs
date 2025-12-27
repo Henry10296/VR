@@ -21,6 +21,7 @@ public enum ViolationType
     Expired,           // 证件过期
     NameMismatch,      // 姓名不符
     GenderMismatch,    // 性别不符
+    BirthDateMismatch, // 出生日期不符
     PhotoMismatch,     // 照片不符
     NationalityDenied, // 国籍被拒
     MissingDocument,   // 缺少证件
@@ -73,8 +74,12 @@ public class NPCProfile
     // NPC特性
     public bool isViolator;         // 是否违规
     public ViolationType violationType;
+    public List<ViolationType> violationTypes = new List<ViolationType>();
     public bool hasBribe;           // 是否贿赂
     public int bribeAmount;
+
+    public int appearanceAge;
+    public string appearanceTag;
     
     // 对话内容
     public string greetingText;
