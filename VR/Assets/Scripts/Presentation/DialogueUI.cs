@@ -19,8 +19,7 @@ public class DialogueUI : MonoBehaviour
     public GameObject choicesPanel;
     public Button[] choiceButtons;
     public Button nextButton;
-    public Button skipButton;
-    public Button closeButton;
+
     
     [Header("动画")]
     public float fadeInDuration = 0.3f;
@@ -29,25 +28,81 @@ public class DialogueUI : MonoBehaviour
     private CanvasGroup _canvasGroup;
     private bool _subscribed;
     private Coroutine _subscribeCoroutine;
+    
+    private DialogueUI _dialogueUI;
 
     void EnsureRefs()
     {
+        _dialogueUI = GetComponent<DialogueUI>();
+        if(_dialogueUI == null)
+            Debug.LogError(2);
         if (dialoguePanel == null)
         {
             var cg = GetComponentInChildren<CanvasGroup>(true);
             if (cg != null) dialoguePanel = cg.gameObject;
             else dialoguePanel = gameObject;
         }
-        if (speakerNameText == null || dialogueText == null)
-        {
-            var tmps = GetComponentsInChildren<TextMeshProUGUI>(true);
-            if (speakerNameText == null && tmps.Length > 0) speakerNameText = tmps[0];
-            if (dialogueText == null && tmps.Length > 1) dialogueText = tmps[1];
-        }
         if (choicesPanel == null)
         {
             var cp = transform.Find("ChoicesPanel");
             if (cp != null) choicesPanel = cp.gameObject;
+        }
+
+        if (speakerNameText == null || dialogueText == null)
+        {
+            var tmps = GetComponentsInChildren<TextMeshProUGUI>(true);
+
+            TextMeshProUGUI speakerCandidate = null;
+            TextMeshProUGUI dialogueCandidate = null;
+
+            foreach (var t in tmps)
+            {
+                if (t == null) continue;
+                if (choicesPanel != null && t.transform.IsChildOf(choicesPanel.transform)) continue;
+
+                var n = t.gameObject.name;
+                if (!string.IsNullOrEmpty(n))
+                {
+                    var ln = n.ToLowerInvariant();
+                    if (speakerCandidate == null && (ln.Contains("speaker") || ln.Contains("name"))) speakerCandidate = t;
+                    if (dialogueCandidate == null && (ln.Contains("dialogue") || ln.Contains("content") || ln.Contains("text"))) dialogueCandidate = t;
+                }
+            }
+
+            if (dialogueText == null)
+            {
+                if (dialogueCandidate != null) dialogueText = dialogueCandidate;
+                else
+                {
+                    TextMeshProUGUI best = null;
+                    float bestArea = -1f;
+                    foreach (var t in tmps)
+                    {
+                        if (t == null) continue;
+                        if (choicesPanel != null && t.transform.IsChildOf(choicesPanel.transform)) continue;
+                        var rt = t.rectTransform;
+                        float area = Mathf.Abs(rt.rect.width * rt.rect.height);
+                        if (area > bestArea) { bestArea = area; best = t; }
+                    }
+                    if (best != null) dialogueText = best;
+                }
+            }
+
+            if (speakerNameText == null)
+            {
+                if (speakerCandidate != null) speakerNameText = speakerCandidate;
+                else
+                {
+                    foreach (var t in tmps)
+                    {
+                        if (t == null) continue;
+                        if (t == dialogueText) continue;
+                        if (choicesPanel != null && t.transform.IsChildOf(choicesPanel.transform)) continue;
+                        speakerNameText = t;
+                        break;
+                    }
+                }
+            }
         }
         if ((choiceButtons == null || choiceButtons.Length == 0) && choicesPanel != null)
         {
@@ -55,7 +110,7 @@ public class DialogueUI : MonoBehaviour
         }
     }
     
-    void Start()
+    void Awake()
     {
         EnsureRefs();
         _canvasGroup = dialoguePanel != null ? dialoguePanel.GetComponent<CanvasGroup>() : null;
@@ -65,9 +120,8 @@ public class DialogueUI : MonoBehaviour
         }
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
         if (choicesPanel != null) choicesPanel.SetActive(false);
-        SubscribeToManager();
     }
-    
+
     void OnEnable()
     {
         EnsureRefs();
@@ -77,25 +131,11 @@ public class DialogueUI : MonoBehaviour
             nextButton.onClick.RemoveAllListeners();
             nextButton.onClick.AddListener(() => DialogueManager.Instance.Next());
         }
-        if (skipButton != null)
-        {
-            skipButton.onClick.RemoveAllListeners();
-            skipButton.onClick.AddListener(() => DialogueManager.Instance.SkipTyping());
-        }
-        if (closeButton != null)
-        {
-            closeButton.onClick.RemoveAllListeners();
-            closeButton.onClick.AddListener(() => DialogueManager.Instance.CloseDialogue());
-        }
-    }
-
-    void OnDisable()
-    {
-        UnsubscribeFromManager();
     }
 
     private void SubscribeToManager()
     {
+   
         if (_subscribed) return;
         if (DialogueManager.Instance != null)
         {
@@ -216,8 +256,8 @@ public class DialogueUI : MonoBehaviour
         var cd = DialogueManager.Instance != null ? DialogueManager.Instance.CurrentDialogue : null;
         if (cd != null && cd.choices != null) hasChoices = cd.choices.Count > 0;
         if (nextButton != null) nextButton.gameObject.SetActive(!auto && !hasChoices);
-        if (skipButton != null) skipButton.gameObject.SetActive(true);
-        if (closeButton != null) closeButton.gameObject.SetActive(true);
+        /*if (skipButton != null) skipButton.gameObject.SetActive(true);
+        if (closeButton != null) closeButton.gameObject.SetActive(true);*/
     }
     
     IEnumerator FadeIn()
@@ -225,7 +265,7 @@ public class DialogueUI : MonoBehaviour
         float elapsed = 0;
         while (elapsed < fadeInDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             _canvasGroup.alpha = Mathf.Lerp(0, 1, elapsed / fadeInDuration);
             yield return null;
         }
@@ -237,7 +277,7 @@ public class DialogueUI : MonoBehaviour
         float elapsed = 0;
         while (elapsed < fadeOutDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             _canvasGroup.alpha = Mathf.Lerp(1, 0, elapsed / fadeOutDuration);
             yield return null;
         }

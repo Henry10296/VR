@@ -67,7 +67,7 @@ public class InspectionManager : Singleton<InspectionManager>
         
         if (passport.birthDate != npc.birthDate)
         {
-            result.AddViolation(ViolationType.NameMismatch); // 可以扩展为DateMismatch
+            result.AddViolation(ViolationType.  BirthDateMismatch);
         }
     }
     

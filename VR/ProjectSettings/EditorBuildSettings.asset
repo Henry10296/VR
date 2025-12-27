@@ -12,4 +12,5 @@ EditorBuildSettings:
     path: Assets/Scenes/Dialogue/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 3247fc08c3818d4449dfb582b1a6a605, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 7791048c05c7e36408fac3941095ef57, type: 2}
