@@ -1189,6 +1189,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83e4e6cca11330d4088d729ab4fc9d9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_StartingHoverFilters: []
+  m_StartingSelectFilters: []
 --- !u!4 &969498767
 Transform:
   m_ObjectHideFlags: 0
@@ -1386,6 +1388,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83e4e6cca11330d4088d729ab4fc9d9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_StartingHoverFilters: []
+  m_StartingSelectFilters: []
 --- !u!4 &1007500587
 Transform:
   m_ObjectHideFlags: 0
@@ -3705,6 +3709,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 417242543693616238, guid: a63ac30a3436c054a838339f43014b84, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5032244604159878378, guid: a63ac30a3436c054a838339f43014b84, type: 3}
       propertyPath: m_LocalPosition.y
       value: -0.00361

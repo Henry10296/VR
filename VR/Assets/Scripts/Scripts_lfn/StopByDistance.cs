@@ -1,36 +1,36 @@
 using UnityEngine;
-using System.Collections;
 
 public class StopByDistance : MonoBehaviour
 {
     [Header("Stop Point")]
-    public Transform stopPoint;                 // 不填就用本物体 Transform
+    [Tooltip("If null, use this object's transform as stop point.")]
+    public Transform stopPoint;
 
     [Header("NPC Targeting")]
+    [Tooltip("Optional. If not assigned, script will auto-find the closest NPC with MovePath.")]
     public GameObject npc;
+
+    [Tooltip("Auto-find NPC each frame until found (useful when NPC is spawned after Play starts).")]
     public bool autoFindNpc = true;
 
     [Header("Distance")]
-    public float stopDistance = 0.8f;
+    public float stopDistance = 0.9f;
 
-    [Header("Animator Params (use YOUR variables)")]
-    public string isWalkingBool = "IsWalking";
-    public string doTalkTrigger = "DoTalk";
-
-    [Header("On Stop")]
+    [Header("Animations (state names in Animator)")]
+    public string walkState = "walk";
+    public string idleState = "idle1";
+    public string talkTrigger = "DoTalk"; // Trigger parameter name in Animator
     public bool playTalkOnStop = true;
-    public float talkDelay = 0.15f;
-    public bool returnToIdleAfterTalk = false;  // 先不强行回 idle，交给状态机/你的 transition
+
+    [Header("Session Hook (NEW)")]
+    public PathSession session;   // ✅新增：告诉谁“到站了”
 
     [Header("Debug")]
-    public bool logDebug = false;
+    public bool logDebug = true;
 
     private MovePath _movePath;
     private Animator _anim;
-
-    private bool _walkSet;      // ✅ 防止重复 set walking
-    private bool _stopped;      // ✅ 防止重复 stop
-    private bool _talkTriggered;
+    private bool _stopped;
 
     void Awake()
     {
@@ -39,102 +39,81 @@ public class StopByDistance : MonoBehaviour
 
     void Update()
     {
-        // 1) 找 NPC（适配 Populate 动态生成）
+        // 1) Acquire NPC if needed
         if ((npc == null || _movePath == null) && autoFindNpc)
-            TryFindClosestNpc();
+        {
+            TryAutoFindClosestNpc();
+        }
 
         if (npc == null || _movePath == null) return;
 
-        // 2) Grab Animator once
-        if (_anim == null)
+        // 2) While moving, ensure walk animation (avoid "滑行/idle平移")
+        if (!_stopped)
         {
-            _anim = npc.GetComponentInChildren<Animator>();
-            if (_anim != null)
-                _anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            EnsureAnimator();
+            if (_anim != null && !string.IsNullOrWhiteSpace(walkState))
+            {
+                _anim.CrossFade(walkState, 0.08f);
+            }
         }
 
-        // 3) ✅ 开始走：只触发一次（用你给的变量）
-        if (!_stopped && !_walkSet && _anim != null)
-        {
-            _anim.SetBool(isWalkingBool, true);
-            _walkSet = true;
-
-            if (logDebug) Debug.Log($"[StopByDistance] Set {isWalkingBool}=true once for {npc.name}");
-        }
-
-        // 4) 到点判断（XZ 平面距离）
+        // 3) Distance check (XZ only, ignore height)
         Vector3 a = npc.transform.position; a.y = 0f;
         Vector3 b = stopPoint.position;     b.y = 0f;
         float d = Vector3.Distance(a, b);
 
+        if (logDebug && Time.frameCount % 30 == 0)
+        {
+            Debug.Log($"[StopByDistance] NPC={npc.name}, dist={d:F2}, stopped={_stopped}");
+        }
+
+        // 4) Stop when within distance
         if (!_stopped && d <= stopDistance)
         {
-            StopNpc();
+            DoStop();
         }
     }
 
-    private void StopNpc()
+    private void DoStop()
     {
         _stopped = true;
 
-        // 真停：关 MovePath
-        if (_movePath != null) _movePath.enabled = false;
+        // 真正停住：禁用 MovePath（不是靠撞墙）
+        _movePath.enabled = false;
 
-        // ✅ 停下：用变量切回 idle（你的状态机应当：IsWalking=false -> idle1）
-        if (_anim != null)
+        EnsureAnimator();
+
+        if (_anim != null && !string.IsNullOrWhiteSpace(idleState))
         {
-            _anim.SetBool(isWalkingBool, false);
+            _anim.Play(idleState, 0, 0f);
         }
 
-        if (playTalkOnStop && !_talkTriggered)
+        if (_anim != null && playTalkOnStop && !string.IsNullOrWhiteSpace(talkTrigger))
         {
-            _talkTriggered = true;
-
-            if (talkDelay <= 0f) TriggerTalk();
-            else StartCoroutine(TalkDelayed(talkDelay));
+            _anim.ResetTrigger(talkTrigger);
+            _anim.SetTrigger(talkTrigger);
         }
 
-        if (logDebug) Debug.Log($"[StopByDistance] STOP: {npc.name}");
+        // ✅新增：到站通知（设置 currentSession）
+        if (session != null)
+            session.NotifyArrived();
+
+        if (logDebug) Debug.Log($"[StopByDistance] STOPPED: {npc.name}");
     }
 
-    private IEnumerator TalkDelayed(float delay)
+    private void EnsureAnimator()
     {
-        yield return new WaitForSeconds(delay);
-        TriggerTalk();
+        if (_anim == null && npc != null)
+        {
+            _anim = npc.GetComponentInChildren<Animator>();
+            if (_anim != null)
+            {
+                _anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            }
+        }
     }
 
-    private void TriggerTalk()
-    {
-        if (_anim == null) return;
-        _anim.ResetTrigger(doTalkTrigger);
-        _anim.SetTrigger(doTalkTrigger);
-
-        if (logDebug) Debug.Log($"[StopByDistance] Trigger {doTalkTrigger} for {npc.name}");
-    }
-
-    // ✅ 放行继续走时调用
-    public void ResumeNpc()
-    {
-        if (npc == null) return;
-
-        if (_movePath == null) _movePath = npc.GetComponent<MovePath>();
-        if (_anim == null) _anim = npc.GetComponentInChildren<Animator>();
-
-        _stopped = false;
-        _talkTriggered = false;
-
-        if (_movePath != null) _movePath.enabled = true;
-
-        // ✅ 继续走：再设 walking=true（仍然变量驱动）
-        if (_anim != null) _anim.SetBool(isWalkingBool, true);
-
-        // ✅ 允许下一次重新“只触发一次”
-        _walkSet = true; // 已经在走了，不需要 Update 再 set
-
-        if (logDebug) Debug.Log($"[StopByDistance] RESUME: {npc.name}");
-    }
-
-    private void TryFindClosestNpc()
+    private void TryAutoFindClosestNpc()
     {
         var all = FindObjectsOfType<MovePath>();
         if (all == null || all.Length == 0) return;
@@ -147,35 +126,51 @@ public class StopByDistance : MonoBehaviour
         foreach (var mp in all)
         {
             if (!mp.enabled) continue;
-            Vector3 p = mp.transform.position; p.y = 0f;
+            var go = mp.gameObject;
+            Vector3 p = go.transform.position; p.y = 0f;
+
             float d = Vector3.Distance(p, sp);
-            if (d < best) { best = d; bestMp = mp; }
+            if (d < best)
+            {
+                best = d;
+                bestMp = mp;
+            }
         }
 
         if (bestMp != null)
         {
-            npc = bestMp.gameObject;
             _movePath = bestMp;
-
+            npc = bestMp.gameObject;
             _anim = null;
-            _stopped = false;
-            _talkTriggered = false;
-            _walkSet = false; // ✅ 新 NPC 要重新 set walking=true 一次
-
-            if (logDebug) Debug.Log($"[StopByDistance] Found NPC: {npc.name}");
+            if (logDebug) Debug.Log($"[StopByDistance] Found NPC: {npc.name} (dist {best:F2})");
         }
     }
-    
-    // 加在 StopByDistance 类里面（任意位置都行）
-    public void ForceLeaveNow()
+
+    // 你之后放行可以调用这个（你原本就有）
+    public void ResumeNpc()
     {
-        // 1) 恢复移动
-        ResumeNpc();
+        if (npc == null) return;
+        if (_movePath == null) _movePath = npc.GetComponent<MovePath>();
+        EnsureAnimator();
 
-        // 2) 关键：禁用自己，防止下一帧又把 NPC 停住
-        enabled = false;
+        _stopped = false;
+        if (_movePath != null) _movePath.enabled = true;
 
-        if (logDebug) Debug.Log("[StopByDistance] ForceLeaveNow -> resumed MovePath and disabled StopByDistance.");
+        if (_anim != null && !string.IsNullOrWhiteSpace(walkState))
+            _anim.CrossFade(walkState, 0.08f);
+
+        if (logDebug) Debug.Log($"[StopByDistance] RESUME: {npc.name}");
     }
 
+    /// <summary>
+    /// ✅新增：UI点“放行/强制离开”就调用这个
+    /// 关键点：恢复MovePath + 立刻禁用本StopByDistance，避免下一帧又把NPC停住
+    /// </summary>
+    public void ForceLeaveNow()
+    {
+        ResumeNpc();
+        enabled = false;
+
+        if (logDebug) Debug.Log("[StopByDistance] ForceLeaveNow -> resumed NPC and disabled StopByDistance.");
+    }
 }
