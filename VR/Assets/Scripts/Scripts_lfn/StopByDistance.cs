@@ -165,4 +165,17 @@ public class StopByDistance : MonoBehaviour
             if (logDebug) Debug.Log($"[StopByDistance] Found NPC: {npc.name}");
         }
     }
+    
+    // 加在 StopByDistance 类里面（任意位置都行）
+    public void ForceLeaveNow()
+    {
+        // 1) 恢复移动
+        ResumeNpc();
+
+        // 2) 关键：禁用自己，防止下一帧又把 NPC 停住
+        enabled = false;
+
+        if (logDebug) Debug.Log("[StopByDistance] ForceLeaveNow -> resumed MovePath and disabled StopByDistance.");
+    }
+
 }

@@ -2,56 +2,46 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// NPCDialogueController
-/// - Owns dialogue progression (lines + index)
-/// - Does NOT handle UI.
-/// - On each "advance", it can request NPCAnimationDriver to play talk once.
-/// - Provides events so UI can update text without polling.
+/// NPCDialogueController (Textless / Step-based)
+/// - No dialogue content stored.
+/// - Only controls "how many lines" and "current step".
+/// - Each step triggers NPC talk animation once.
+/// - UI can subscribe to events (step changed / finished).
 /// </summary>
 public class NPCDialogueController : MonoBehaviour
 {
     [Header("Dependencies")]
-    [Tooltip("Optional. If null, will auto-find on same NPC root.")]
     [SerializeField] private NPCAnimationDriver animationDriver;
 
-    [Header("Dialogue Data (Demo)")]
-    [TextArea(2, 4)]
-    [SerializeField] private string[] lines;
+    [Header("Dialogue Steps (Demo)")]
+    [Tooltip("How many 'sentences' in this dialogue. Each click advances 1 step.")]
+    [Min(1)]
+    [SerializeField] private int totalLines = 3;
 
     [Header("Behavior")]
-    [Tooltip("If true, calling StartDialogue() will immediately show the first line.")]
-    [SerializeField] private bool showFirstLineImmediately = true;
+    [Tooltip("If true, first click will auto-start and play the first talk.")]
+    [SerializeField] private bool autoStartOnNext = true;
 
-    [Tooltip("If true, each line advance triggers a talk animation.")]
+    [Tooltip("If true, every step triggers a talk animation.")]
     [SerializeField] private bool playTalkEveryLine = true;
 
-    [Tooltip("If true, StartDialogue() restarts from line 0 even if already in progress.")]
+    [Tooltip("If true, calling StartDialogue() resets to line 0 even if already running.")]
     [SerializeField] private bool restartIfAlreadyRunning = true;
 
     [Header("Debug")]
     [SerializeField] private bool logDebug = false;
 
-    // --------- Public State ----------
     public bool IsRunning { get; private set; }
     public bool IsFinished { get; private set; }
+
+    /// <summary>0-based line index. -1 means not started.</summary>
     public int CurrentIndex { get; private set; } = -1;
 
-    /// <summary>Current line text. Empty if not running or index invalid.</summary>
-    public string CurrentLine => (IsRunning && CurrentIndex >= 0 && CurrentIndex < (lines?.Length ?? 0))
-        ? lines[CurrentIndex]
-        : string.Empty;
+    public int TotalLines => totalLines;
 
-    /// <summary>Total lines count (0 if null).</summary>
-    public int TotalLines => lines?.Length ?? 0;
-
-    // --------- Events (UI can subscribe) ----------
-    /// <summary>Fires when a new line becomes active (index + text).</summary>
-    public event Action<int, string> OnLineChanged;
-
-    /// <summary>Fires when dialogue starts.</summary>
+    // UI can subscribe (optional)
+    public event Action<int, int> OnLineAdvanced; // (currentIndex, totalLines)
     public event Action OnDialogueStarted;
-
-    /// <summary>Fires when dialogue ends.</summary>
     public event Action OnDialogueFinished;
 
     private void Awake()
@@ -60,65 +50,35 @@ public class NPCDialogueController : MonoBehaviour
             animationDriver = GetComponentInChildren<NPCAnimationDriver>();
     }
 
-    // =========================
-    // Public API (UI will call these)
-    // =========================
-
-    /// <summary>
-    /// Start the dialogue. By default will show line 0 immediately.
-    /// </summary>
     public void StartDialogue()
     {
-        if (TotalLines <= 0)
-        {
-            if (logDebug) Debug.LogWarning($"[NPCDialogueController] No lines assigned on {name}");
-            // still consider as finished to avoid UI hanging
-            IsRunning = false;
-            IsFinished = true;
-            CurrentIndex = -1;
-            OnDialogueFinished?.Invoke();
-            return;
-        }
+        if (totalLines < 1) totalLines = 1;
 
-        if (IsRunning && !restartIfAlreadyRunning)
-        {
-            // already running, do nothing
-            if (logDebug) Debug.Log($"[NPCDialogueController] StartDialogue ignored (already running) on {name}");
-            return;
-        }
+        if (IsRunning && !restartIfAlreadyRunning) return;
 
         IsRunning = true;
         IsFinished = false;
         CurrentIndex = -1;
 
         OnDialogueStarted?.Invoke();
-        if (logDebug) Debug.Log($"[NPCDialogueController] Dialogue START on {name}");
-
-        if (showFirstLineImmediately)
-        {
-            // Go to first line
-            NextLine();
-        }
+        if (logDebug) Debug.Log($"[NPCDialogueController] START on {name}");
     }
 
     /// <summary>
-    /// Advance to the next line.
-    /// - If not running, it will auto-start (common for "Talk" button).
-    /// - Each advance triggers talk animation (optional).
-    /// - When out of lines, it finishes.
+    /// Advance one line (one "sentence").
+    /// Each call can trigger talk animation once.
     /// </summary>
     public void NextLine()
     {
         if (!IsRunning)
         {
-            // auto-start behaviour: first click opens dialogue
+            if (!autoStartOnNext) return;
             StartDialogue();
-            return;
         }
 
         int next = CurrentIndex + 1;
 
-        if (next >= TotalLines)
+        if (next >= totalLines)
         {
             FinishDialogue();
             return;
@@ -129,51 +89,36 @@ public class NPCDialogueController : MonoBehaviour
         if (playTalkEveryLine)
             animationDriver?.PlayTalkOnce();
 
-        OnLineChanged?.Invoke(CurrentIndex, CurrentLine);
+        OnLineAdvanced?.Invoke(CurrentIndex, totalLines);
 
-        if (logDebug) Debug.Log($"[NPCDialogueController] Line {CurrentIndex}/{TotalLines - 1}: {CurrentLine}");
+        if (logDebug) Debug.Log($"[NPCDialogueController] Line {CurrentIndex + 1}/{totalLines} on {name}");
     }
 
-    /// <summary>
-    /// Force finish the dialogue immediately (e.g., player cancels).
-    /// </summary>
     public void EndDialogue()
     {
         if (!IsRunning && IsFinished) return;
         FinishDialogue();
     }
 
-    /// <summary>
-    /// Reset dialogue state without starting.
-    /// </summary>
     public void ResetDialogue()
     {
         IsRunning = false;
         IsFinished = false;
         CurrentIndex = -1;
-        if (logDebug) Debug.Log($"[NPCDialogueController] ResetDialogue on {name}");
     }
 
-    /// <summary>
-    /// Replace lines at runtime (optional).
-    /// Useful if later you load dialogue data from file/ScriptableObject.
-    /// </summary>
-    public void SetLines(string[] newLines, bool resetState = true)
+    public void SetTotalLines(int count, bool reset = true)
     {
-        lines = newLines;
-        if (resetState) ResetDialogue();
+        totalLines = Mathf.Max(1, count);
+        if (reset) ResetDialogue();
     }
-
-    // =========================
-    // Internal
-    // =========================
 
     private void FinishDialogue()
     {
         IsRunning = false;
         IsFinished = true;
 
-        if (logDebug) Debug.Log($"[NPCDialogueController] Dialogue FINISH on {name}");
+        if (logDebug) Debug.Log($"[NPCDialogueController] FINISH on {name}");
 
         OnDialogueFinished?.Invoke();
     }

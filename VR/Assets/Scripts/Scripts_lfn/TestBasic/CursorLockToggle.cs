@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class CursorLockToggle : MonoBehaviour
 {
-    public bool lockOnStart = true;
-    public KeyCode unlockKey = KeyCode.Escape;
+    public bool lockOnStart = false;
+    public bool lockState = false;
 
     void Start()
     {
@@ -13,13 +13,15 @@ public class CursorLockToggle : MonoBehaviour
 
     void Update()
     {
-        // Esc 解锁
-        if (Input.GetKeyDown(unlockKey))
-            UnlockCursor();
+        if (Input.GetKeyDown(KeyCode.BackQuote))
+        {
+            lockState = !lockState;
 
-        // 点击左键重新锁定（你也可以改成任意键）
-        if (Input.GetMouseButtonDown(0))
-            LockCursor();
+            if (lockState)
+                LockCursor();
+            else
+                UnlockCursor();
+        }
     }
 
     public void LockCursor()
@@ -33,4 +35,5 @@ public class CursorLockToggle : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
+    
 }
