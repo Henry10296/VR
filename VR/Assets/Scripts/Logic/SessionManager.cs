@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class SessionManager : Singleton<SessionManager>
 {
-    
     [Header("会话数据")]
     public int currentDay = 0;
     public int totalMoney = 50;  

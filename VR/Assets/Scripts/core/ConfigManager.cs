@@ -41,8 +41,8 @@ public class ConfigManager : Singleton<ConfigManager>
                     allowedNationalities = new List<string> { "Arstotzka" },
                     requireWorkPermit = false,
                     requireFingerprint = false,
-                    enableDialogue = false,
-                    targetNPCCount = 10,
+                    enableDialogue = true,
+                    targetNPCCount = 3,
                     dialogueTemplate = "Day1_Simple",
                     violatorProbability = 0.3f
                 };
@@ -56,7 +56,7 @@ public class ConfigManager : Singleton<ConfigManager>
                     requireWorkPermit = true,
                     requireFingerprint = true,   
                     enableDialogue = true,
-                    targetNPCCount = 12,
+                    targetNPCCount = 3,
                     dialogueTemplate = "Day2_Purpose",
                     violatorProbability = 0.35f
                 };
@@ -70,7 +70,7 @@ public class ConfigManager : Singleton<ConfigManager>
                     requireWorkPermit = false,
                     requireFingerprint = false,
                     enableDialogue = false,
-                    targetNPCCount = 10,
+                    targetNPCCount = 3,
                     dialogueTemplate = "Day1_Simple",
                     violatorProbability = 0.3f
                 };

@@ -158,7 +158,18 @@ public class GameManager : Singleton<GameManager>
     {
         Debug.Log("[GameManager] 进入工作状态");
         var ui = UnityEngine.Object.FindObjectOfType<DialogueUI>(true);
-        if (ui != null && !ui.gameObject.activeInHierarchy) { ui.gameObject.SetActive(true); }
+        if (ui != null && !ui.gameObject.activeInHierarchy)
+        {
+            Transform t = ui.transform;
+            Transform toEnable = null;
+            while (t != null)
+            {
+                if (!t.gameObject.activeSelf) toEnable = t;
+                t = t.parent;
+            }
+            if (toEnable != null) toEnable.gameObject.SetActive(true);
+            else ui.gameObject.SetActive(true);
+        }
     
         // 1. 调用 NPC 管理器生成今天的队列
         NPCManager.Instance.GenerateDailyNPCs();
