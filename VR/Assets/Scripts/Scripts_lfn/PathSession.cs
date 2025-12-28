@@ -2,78 +2,86 @@ using UnityEngine;
 
 public class PathSession : MonoBehaviour
 {
-    [Header("References (drag in Inspector)")]
-    public StopByDistance stopByDistance;
-
-    [Header("Optional")]
+    [Header("Optional refs (can be auto found)")]
+    public PeopleWalkPath peopleWalkPath;          // 挂在同一根物体上
+    public WindowResumeLeave windowResumeLeave;    // 你已有的“让NPC继续走完”的脚本（若不用也行）
     public bool logDebug = true;
 
-    private bool arrived = false;
-    private bool finished = false;
-
-    public bool IsFinished => finished;
-    public bool IsArrived => arrived;
+    [Header("Runtime (read only)")]
+    [SerializeField] private MovePath cachedMovePath; // 当前NPC clone身上的 MovePath
 
     private void Awake()
     {
-        // 让 StopByDistance 知道“到站要通知谁”
-        if (stopByDistance != null)
-            stopByDistance.session = this;
+        if (!peopleWalkPath) peopleWalkPath = GetComponent<PeopleWalkPath>();
+        if (!windowResumeLeave) windowResumeLeave = GetComponentInChildren<WindowResumeLeave>(true);
+
+        CacheCurrentNpcMovePath();
     }
 
-    /// <summary>
-    /// StopByDistance 停住NPC的那一刻会调用
-    /// </summary>
-    public void NotifyArrived()
+    private void OnEnable()
     {
-        if (finished) return;
-        if (arrived) return;
-
-        arrived = true;
-
-        if (logDebug) Debug.Log($"[PathSession] Arrived: {name}");
-
-        // 把自己注册为全局“当前NPC会话”
-        if (DayManager.Instance != null)
-            DayManager.Instance.SetCurrentSession(this);
-        else
-            Debug.LogError("[PathSession] DayManager.Instance is NULL.");
+        // 每次启用这条路径时，重新抓一次，避免你切换天/切换NPC时引用旧的
+        CacheCurrentNpcMovePath();
     }
 
-    /// <summary>
-    /// UI点击放行/强制离开后，DayManager会调用这个
-    /// </summary>
+    public void SetActive(bool active)
+    {
+        gameObject.SetActive(active);
+    }
+
     public void ForceLeave()
     {
-        if (finished) return;
+        CacheCurrentNpcMovePath();
 
-        if (stopByDistance == null)
+        if (cachedMovePath == null)
         {
-            Debug.LogError($"[PathSession] stopByDistance is NULL on {name}");
+            if (logDebug) Debug.LogWarning($"[PathSession] MovePath 为空，无法离开：{name}");
             return;
         }
 
-        // 关键：强制放行（恢复MovePath + 禁用StopByDistance避免下一帧又停住）
-        stopByDistance.ForceLeaveNow();
+        // ✅ 方案A：如果你已有 WindowResumeLeave（并且它内部已经能 Resume/ForceLeave）
+        if (windowResumeLeave != null)
+        {
+            if (logDebug) Debug.Log($"[PathSession] Use WindowResumeLeave to leave. Path={name}");
+            windowResumeLeave.OnClickResumeForceLeave(); // 你得保证 WindowResumeLeave 里有这个 public 方法
+            return;
+        }
 
-        finished = true;
-
-        if (logDebug) Debug.Log($"[PathSession] Finished: {name}");
-
-        if (DayManager.Instance != null)
-            DayManager.Instance.ReportFinished(this);
+        // ✅ 方案B：直接对 MovePath 做“继续走”（根据你 MovePath 的实现改函数名）
+        // 比如你 MovePath 里可能叫 Resume() / Continue() / SetStopped(false) / EnableMove() 等
+        if (logDebug) Debug.Log($"[PathSession] Direct leave via MovePath. NPC={cachedMovePath.name}");
+        cachedMovePath.enabled = true; // 最保底：至少确保脚本启用
+        // TODO：这里按你 MovePath 的真实API补一行，比如 cachedMovePath.Resume();
     }
 
-    public void ResetSession()
+    private void CacheCurrentNpcMovePath()
     {
-        arrived = false;
-        finished = false;
+        cachedMovePath = null;
 
-        // StopByDistance 默认应启用（当天开始可以重新拦停）
-        if (stopByDistance != null)
+        // 你的体系：Populate 之后，people 子物体下有 clone，clone 根上挂 MovePath
+        // PeopleWalkPath 通常会有一个 people 容器（你层级里就叫 people）
+        Transform peopleRoot = transform.Find("people");
+        if (peopleRoot == null)
         {
-            stopByDistance.enabled = true;
-            stopByDistance.session = this;
+            // 有些资产包可能叫 People/Persons/Characters，你按需加：Find("People")...
+            peopleRoot = transform;
+        }
+
+        // 找第一个带 MovePath 的子物体（你说你保证每条路径只有一个NPC）
+        cachedMovePath = peopleRoot.GetComponentInChildren<MovePath>(true);
+
+        if (logDebug)
+        {
+            if (cachedMovePath != null) Debug.Log($"[PathSession] Found MovePath on: {cachedMovePath.name}");
+            else Debug.LogWarning($"[PathSession] No MovePath found under {name}");
         }
     }
+    public bool HasArrived { get; private set; }
+
+    public void NotifyArrived()
+    {
+        HasArrived = true;
+        if (logDebug) Debug.Log($"[PathSession] Arrived: {name}");
+    }
+
 }

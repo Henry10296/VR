@@ -1,114 +1,133 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class DayManager : MonoBehaviour
 {
-    public static DayManager Instance { get; private set; }
-
-    [Header("Day Roots (Day_1, Day_2, Day_3...)")]
-    public List<GameObject> dayRoots = new List<GameObject>();
-
-    [Header("Config")]
-    public int npcsPerDay = 3;
-    public bool autoAdvanceDay = true;
-
-    [Header("Runtime (Read Only)")]
-    [SerializeField] private int currentDayIndex = 0;
-    [SerializeField] private int finishedCount = 0;
-
-    private PathSession currentSession;
-
-    private void Awake()
+    [Serializable]
+    public class DayGroup
     {
-        if (Instance != null && Instance != this)
+        public string dayName;
+        public List<PathSession> paths = new List<PathSession>();
+    }
+
+    [Header("Days / Paths")]
+    public List<DayGroup> days = new List<DayGroup>();
+
+    [Header("Start State")]
+    public int startDayIndex = 0;
+    public int startNpcIndex = 0;
+
+    [Header("Debug")]
+    public bool logDebug = true;
+
+    private int dayIndex;
+    private int npcIndex;
+
+    public PathSession CurrentSession
+    {
+        get
         {
-            Destroy(gameObject);
-            return;
+            if (days == null || days.Count == 0) return null;
+            if (dayIndex < 0 || dayIndex >= days.Count) return null;
+            var list = days[dayIndex].paths;
+            if (list == null || list.Count == 0) return null;
+            if (npcIndex < 0 || npcIndex >= list.Count) return null;
+            return list[npcIndex];
         }
-        Instance = this;
     }
 
     private void Start()
     {
-        StartDay(0);
+        dayIndex = Mathf.Clamp(startDayIndex, 0, days.Count - 1);
+        npcIndex = 0;
+
+        // 先全关，再开目标
+        DisableAllPaths();
+        npcIndex = Mathf.Clamp(startNpcIndex, 0, days[dayIndex].paths.Count - 1);
+        EnableOnly(dayIndex, npcIndex);
+
+        if (logDebug) Debug.Log($"[DayManager] Start at Day={dayIndex}, NPC={npcIndex}");
     }
 
-    public void StartDay(int dayIndex)
+    // --------- 你要的三个按钮入口 ---------
+
+    // 1) 当前 NPC 离开（不切换、不销毁）
+    public void LeaveCurrentNpc()
     {
-        if (dayRoots == null || dayRoots.Count == 0)
+        var s = CurrentSession;
+        if (s == null)
         {
-            Debug.LogError("[DayManager] dayRoots is empty.");
+            if (logDebug) Debug.LogWarning("[DayManager] No current session to leave.");
             return;
         }
 
-        currentDayIndex = Mathf.Clamp(dayIndex, 0, dayRoots.Count - 1);
-        finishedCount = 0;
-        currentSession = null;
+        if (logDebug) Debug.Log($"[DayManager] LeaveCurrentNpc: Day={dayIndex} NPC={npcIndex} Path={s.name}");
+        s.ForceLeave();
+    }
 
-        // Only enable current day root
-        for (int i = 0; i < dayRoots.Count; i++)
+    // 2) 切换下一个 NPC（关当前，开下一个）
+    public void NextNpc()
+    {
+        var day = days[dayIndex];
+        if (day.paths == null || day.paths.Count == 0) return;
+
+        int next = npcIndex + 1;
+        if (next >= day.paths.Count)
         {
-            if (dayRoots[i] != null)
-                dayRoots[i].SetActive(i == currentDayIndex);
+            if (logDebug) Debug.Log("[DayManager] Already last NPC of today.");
+            return; // 你也可以改成自动 NextDay()
         }
 
-        // Reset PathSessions in current day
-        var sessions = dayRoots[currentDayIndex].GetComponentsInChildren<PathSession>(true);
-        foreach (var s in sessions)
-            s.ResetSession();
+        EnableOnly(dayIndex, next);
 
-        Debug.Log($"[DayManager] StartDay: {currentDayIndex + 1} (sessions={sessions.Length})");
+        if (logDebug) Debug.Log($"[DayManager] NextNpc: Day={dayIndex} NPC={next}");
     }
 
-    public void SetCurrentSession(PathSession session)
+    // 3) 下一天（切换天，开该天第一个 NPC）
+    public void NextDay()
     {
-        if (session == null) return;
-
-        // 防止已完成的又抢 current
-        if (session.IsFinished)
-            return;
-
-        currentSession = session;
-        Debug.Log($"[DayManager] CurrentSession = {session.name}");
-    }
-
-    /// <summary>
-    /// UI按钮绑定这个：放行/强制离开
-    /// </summary>
-    public void ForceLeaveCurrent()
-    {
-        if (currentSession == null)
+        int nextDay = dayIndex + 1;
+        if (nextDay >= days.Count)
         {
-            Debug.LogWarning("[DayManager] ForceLeaveCurrent: currentSession is NULL (no NPC arrived yet).");
+            if (logDebug) Debug.Log("[DayManager] Already last day.");
             return;
         }
 
-        Debug.Log($"[DayManager] ForceLeaveCurrent -> {currentSession.name}");
-        currentSession.ForceLeave();
+        dayIndex = nextDay;
+        npcIndex = 0;
+
+        DisableAllPaths();
+        EnableOnly(dayIndex, npcIndex);
+
+        if (logDebug) Debug.Log($"[DayManager] NextDay -> Day={dayIndex} NPC={npcIndex}");
     }
 
-    public void ReportFinished(PathSession session)
+    // --------- 内部工具 ---------
+
+    private void EnableOnly(int d, int n)
     {
-        if (session == null) return;
-
-        finishedCount++;
-        Debug.Log($"[DayManager] FinishedCount = {finishedCount}/{npcsPerDay}");
-
-        // 清空 current（避免重复点按钮还打到旧session）
-        if (currentSession == session)
-            currentSession = null;
-
-        if (finishedCount >= npcsPerDay)
+        // 先关当前天全部
+        for (int i = 0; i < days[d].paths.Count; i++)
         {
-            Debug.Log($"[DayManager] Day {currentDayIndex + 1} Completed.");
+            if (days[d].paths[i] != null) days[d].paths[i].SetActive(false);
+        }
 
-            if (autoAdvanceDay)
+        // 再开目标
+        var target = days[d].paths[n];
+        if (target != null) target.SetActive(true);
+
+        npcIndex = n;
+    }
+
+    private void DisableAllPaths()
+    {
+        foreach (var day in days)
+        {
+            if (day.paths == null) continue;
+            foreach (var p in day.paths)
             {
-                int next = currentDayIndex + 1;
-                if (next < dayRoots.Count)
-                    StartDay(next);
-                else
-                    Debug.Log("[DayManager] All days completed (Demo End).");
+                if (p != null) p.SetActive(false);
             }
         }
     }
