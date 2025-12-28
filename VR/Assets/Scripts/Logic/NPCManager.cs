@@ -35,7 +35,6 @@ public class NPCManager : Singleton<NPCManager>
         for (int i = 0; i < count; i++)
         {
             NPCProfile npc = GenerateNPC(i, rules);
-            DialogueGenerator.GenerateDialogueForNPC(npc);
             _npcQueue.Enqueue(npc);
         }
         
@@ -108,8 +107,8 @@ public class NPCManager : Singleton<NPCManager>
         // 生成证件
         GenerateDocuments(npc, rules);
         
-        // 根据当日规则的违规概率
-        if (UnityEngine.Random.value < rules.violatorProbability)
+        // 30%概率生成违规者
+        if (UnityEngine.Random.value < 0.3f)
         {
             IntroduceViolation(npc, rules);
         }
@@ -229,7 +228,7 @@ public class NPCManager : Singleton<NPCManager>
     /// 获取随机工作领域
     /// </summary>
     private string GetRandomWorkField()
-    {            
+    {
         string[] fields = { "Agriculture", "Industry", "Service", "Construction", "Transportation" };
         return fields[UnityEngine.Random.Range(0, fields.Length)];
     }

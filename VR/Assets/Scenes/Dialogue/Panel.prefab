@@ -376,7 +376,6 @@ MonoBehaviour:
   dialogueText: {fileID: 4008699596117663773}
   choicesPanel: {fileID: 7890075783029818017}
   choiceButtons: []
-  nextButton: {fileID: 0}
   fadeInDuration: 0.3
   fadeOutDuration: 0.3
 --- !u!1 &8802303239637984389

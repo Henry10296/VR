@@ -42,9 +42,7 @@ public class ConfigManager : Singleton<ConfigManager>
                     requireWorkPermit = false,
                     requireFingerprint = false,
                     enableDialogue = true,
-                    targetNPCCount = 3,
-                    dialogueTemplate = "Day1_Simple",
-                    violatorProbability = 0.3f
+                    targetNPCCount = 10
                 };
                 
             case 2:
@@ -56,9 +54,7 @@ public class ConfigManager : Singleton<ConfigManager>
                     requireWorkPermit = true,
                     requireFingerprint = true,   
                     enableDialogue = true,
-                    targetNPCCount = 3,
-                    dialogueTemplate = "Day2_Purpose",
-                    violatorProbability = 0.35f
+                    targetNPCCount = 12
                 };
                 
             default:
@@ -70,9 +66,7 @@ public class ConfigManager : Singleton<ConfigManager>
                     requireWorkPermit = false,
                     requireFingerprint = false,
                     enableDialogue = false,
-                    targetNPCCount = 3,
-                    dialogueTemplate = "Day1_Simple",
-                    violatorProbability = 0.3f
+                    targetNPCCount = 10
                 };
         }
     }

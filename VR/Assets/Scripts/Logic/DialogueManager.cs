@@ -17,7 +17,7 @@ public class DialogueManager : Singleton<DialogueManager>
     private Coroutine _typingCoroutine;
     private Coroutine _autoCoroutine;
 
-    public DialogueUI DialogueUI;
+    public DialogueUI ui;
     // 对话模板库
     private Dictionary<string, DialogueTemplate> _templates = new Dictionary<string, DialogueTemplate>();
     
@@ -122,14 +122,14 @@ public class DialogueManager : Singleton<DialogueManager>
     public void StartDialogue(NPCProfile npc)
     {
         _currentNPC = npc;
+        _isDialogueActive = true;
         
         // 根据当日规则选择对话模板
         string templateName = GetTemplateForDay(SessionManager.Instance.currentDay);
         
-        if (_templates.TryGetValue(templateName, out var template))
+        if (_templates.ContainsKey(templateName))
         {
-            _isDialogueActive = true;
-            DialogueData firstDialogue = template.dialogues[0];
+            DialogueData firstDialogue = _templates[templateName].dialogues[0];
             
             // 替换NPC名字
             firstDialogue.speaker = npc.name;
@@ -139,7 +139,6 @@ public class DialogueManager : Singleton<DialogueManager>
         }
         else
         {
-            _isDialogueActive = false;
             Debug.LogWarning($"[DialogueManager] Template not found: {templateName}");
         }
     }
@@ -277,13 +276,11 @@ public class DialogueManager : Singleton<DialogueManager>
     /// </summary>
     private string GetTemplateForDay(int day)
     {
-        var rules = SessionManager.Instance.currentDayRules;
-        if (rules != null && !string.IsNullOrEmpty(rules.dialogueTemplate))
-            return rules.dialogueTemplate;
         if (day == 1)
             return "Day1_Simple";
         else if (day >= 2)
             return "Day2_Purpose";
+        
         return "Day1_Simple";
     }
     
@@ -397,14 +394,6 @@ public class DialogueManager : Singleton<DialogueManager>
             nextDialogueId = -1
         };
         PlayDialogue(d);
-    }
-
-    public void RegisterTemplate(string name, DialogueTemplate template)
-    {
-        if (!string.IsNullOrEmpty(name) && template != null)
-        {
-            _templates[name] = template;
-        }
     }
 }
 /// <summary>

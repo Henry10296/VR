@@ -67,7 +67,7 @@ public class InspectionManager : Singleton<InspectionManager>
         
         if (passport.birthDate != npc.birthDate)
         {
-            result.AddViolation(ViolationType.  BirthDateMismatch);
+            result.AddViolation(ViolationType.NameMismatch); // 可以扩展为DateMismatch
         }
     }
     
@@ -192,23 +192,18 @@ public class InspectionManager : Singleton<InspectionManager>
     {
         if (NPCManager.Instance.HasMoreNPCs())
         {
-            //获取npc                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
             _currentNPC = NPCManager.Instance.GetNextNPC();
         
-            if (SessionManager.Instance.currentDayRules != null && SessionManager.Instance.currentDayRules.enableDialogue)
-            {
-                DialogueManager.Instance.StartDialogue(_currentNPC);
-            }
+            // 让对话系统开始工作
+            DialogueManager.Instance.StartDialogue(_currentNPC);
         
             Debug.Log($"[Inspection] 下一位：{_currentNPC.name}");
         }
         else
         {
             // 没 NPC 了，切换到结算状态
-            if(!NPCManager.Instance.HasMoreNPCs())
-                GameManager.Instance.ChangeState(GameState.DaySettlement);
+            GameManager.Instance.ChangeState(GameState.DaySettlement);
         }
-        
     }
     public void StartInspection()
     {
