@@ -110,7 +110,9 @@ public class StopByDistance : MonoBehaviour
         yield return new WaitForSeconds(delay);
         TriggerTalk();
     }
-
+    /// <summary>
+    /// 控制对话开始
+    /// </summary>
     private void TriggerTalk()
     {
         if (_anim == null) return;

@@ -24,6 +24,13 @@ public class DayManager : MonoBehaviour
     private int dayIndex;
     private int npcIndex;
 
+    public static DayManager Instance;
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(this);
+    }
     public PathSession CurrentSession
     {
         get

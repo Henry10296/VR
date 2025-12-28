@@ -18,6 +18,7 @@ public class DialogueUI : MonoBehaviour
     public TextMeshProUGUI dialogueText;
     public GameObject choicesPanel;
     public Button[] choiceButtons;
+    public Button nextButton;
 
     
     [Header("动画")]
@@ -27,9 +28,14 @@ public class DialogueUI : MonoBehaviour
     private CanvasGroup _canvasGroup;
     private bool _subscribed;
     private Coroutine _subscribeCoroutine;
+    
+    private DialogueUI _dialogueUI;
 
     void EnsureRefs()
     {
+        _dialogueUI = GetComponent<DialogueUI>();
+        if(_dialogueUI == null)
+            Debug.LogError(2);
         if (dialoguePanel == null)
         {
             var cg = GetComponentInChildren<CanvasGroup>(true);
@@ -104,17 +110,14 @@ public class DialogueUI : MonoBehaviour
         }
     }
     
-    
     void Awake()
     {
-        
         EnsureRefs();
         _canvasGroup = dialoguePanel != null ? dialoguePanel.GetComponent<CanvasGroup>() : null;
         if (dialoguePanel != null && _canvasGroup == null)
         {
             _canvasGroup = dialoguePanel.AddComponent<CanvasGroup>();
         }
-        SubscribeToManager();
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
         if (choicesPanel != null) choicesPanel.SetActive(false);
     }
@@ -123,11 +126,16 @@ public class DialogueUI : MonoBehaviour
     {
         EnsureRefs();
         SubscribeToManager();
+        if (nextButton != null)
+        {
+            nextButton.onClick.RemoveAllListeners();
+            nextButton.onClick.AddListener(() => DialogueManager.Instance.Next());
+        }
     }
-
 
     private void SubscribeToManager()
     {
+   
         if (_subscribed) return;
         if (DialogueManager.Instance != null)
         {
@@ -156,7 +164,24 @@ public class DialogueUI : MonoBehaviour
         _subscribeCoroutine = null;
         SubscribeToManager();
     }
-    
+
+    private void UnsubscribeFromManager()
+    {
+        if (!_subscribed) return;
+        if (DialogueManager.Instance != null)
+        {
+            DialogueManager.Instance.OnDialogueStart -= OnDialogueStart;
+            DialogueManager.Instance.OnDialogueTextUpdate -= OnDialogueTextUpdate;
+            DialogueManager.Instance.OnDialogueEnd -= OnDialogueEnd;
+            DialogueManager.Instance.OnShowChoices -= OnShowChoices;
+        }
+        _subscribed = false;
+        if (_subscribeCoroutine != null)
+        {
+            StopCoroutine(_subscribeCoroutine);
+            _subscribeCoroutine = null;
+        }
+    }
 
     void OnDialogueStart(DialogueData dialogue)
     {
@@ -230,7 +255,9 @@ public class DialogueUI : MonoBehaviour
         bool hasChoices = false;
         var cd = DialogueManager.Instance != null ? DialogueManager.Instance.CurrentDialogue : null;
         if (cd != null && cd.choices != null) hasChoices = cd.choices.Count > 0;
-
+        if (nextButton != null) nextButton.gameObject.SetActive(!auto && !hasChoices);
+        /*if (skipButton != null) skipButton.gameObject.SetActive(true);
+        if (closeButton != null) closeButton.gameObject.SetActive(true);*/
     }
     
     IEnumerator FadeIn()
@@ -257,6 +284,16 @@ public class DialogueUI : MonoBehaviour
         _canvasGroup.alpha = 0;
         dialoguePanel.SetActive(false);
     }
-
+    
+    void OnDestroy()
+    {
+        if (DialogueManager.Instance != null)
+        {
+            DialogueManager.Instance.OnDialogueStart -= OnDialogueStart;
+            DialogueManager.Instance.OnDialogueTextUpdate -= OnDialogueTextUpdate;
+            DialogueManager.Instance.OnDialogueEnd -= OnDialogueEnd;
+            DialogueManager.Instance.OnShowChoices -= OnShowChoices;
+        }
+    }
 
 }
