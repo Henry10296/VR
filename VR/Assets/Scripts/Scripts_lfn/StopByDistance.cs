@@ -14,13 +14,16 @@ public class StopByDistance : MonoBehaviour
     public float stopDistance = 0.8f;
 
     [Header("Animator Params (use YOUR variables)")]
-    public string isWalkingBool = "IsWalking";
-    public string doTalkTrigger = "DoTalk";
+    public string isWalkingBool = "IsWalking";  // ✅ 你的 bool
+    public string doTalkTrigger = "DoTalk";     // ✅ 你的 trigger
 
     [Header("On Stop")]
     public bool playTalkOnStop = true;
     public float talkDelay = 0.15f;
-    public bool returnToIdleAfterTalk = false;  // 先不强行回 idle，交给状态机/你的 transition
+    public bool returnToIdleAfterTalk = false;  // 交给你的状态机 transition
+
+    [Header("Session Hook (for DayManager)")]
+    public PathSession session;                 // ✅ 新增：到站后通知哪个 PathSession
 
     [Header("Debug")]
     public bool logDebug = false;
@@ -28,8 +31,8 @@ public class StopByDistance : MonoBehaviour
     private MovePath _movePath;
     private Animator _anim;
 
-    private bool _walkSet;      // ✅ 防止重复 set walking
-    private bool _stopped;      // ✅ 防止重复 stop
+    private bool _walkSet;      // 防止重复 set walking
+    private bool _stopped;      // 防止重复 stop
     private bool _talkTriggered;
 
     void Awake()
@@ -80,11 +83,16 @@ public class StopByDistance : MonoBehaviour
         // 真停：关 MovePath
         if (_movePath != null) _movePath.enabled = false;
 
-        // ✅ 停下：用变量切回 idle（你的状态机应当：IsWalking=false -> idle1）
+        // ✅ 停下：用变量切回 idle（你的状态机应当：IsWalking=false -> idle）
         if (_anim != null)
         {
             _anim.SetBool(isWalkingBool, false);
         }
+
+// 3. ✅ 到站通知（关键）
+        var session = GetComponentInParent<PathSession>();
+        if (session != null)
+            session.NotifyArrived();
 
         if (playTalkOnStop && !_talkTriggered)
         {
@@ -106,13 +114,16 @@ public class StopByDistance : MonoBehaviour
     private void TriggerTalk()
     {
         if (_anim == null) return;
+
         _anim.ResetTrigger(doTalkTrigger);
         _anim.SetTrigger(doTalkTrigger);
 
         if (logDebug) Debug.Log($"[StopByDistance] Trigger {doTalkTrigger} for {npc.name}");
     }
 
-    // ✅ 放行继续走时调用
+    /// <summary>
+    /// ✅ 放行继续走（给 PathSession/按钮用）
+    /// </summary>
     public void ResumeNpc()
     {
         if (npc == null) return;
@@ -125,13 +136,24 @@ public class StopByDistance : MonoBehaviour
 
         if (_movePath != null) _movePath.enabled = true;
 
-        // ✅ 继续走：再设 walking=true（仍然变量驱动）
+        // ✅ 继续走：变量驱动
         if (_anim != null) _anim.SetBool(isWalkingBool, true);
 
-        // ✅ 允许下一次重新“只触发一次”
-        _walkSet = true; // 已经在走了，不需要 Update 再 set
+        // 既然现在已经在走了，就不需要 Update 再 set 一次
+        _walkSet = true;
 
         if (logDebug) Debug.Log($"[StopByDistance] RESUME: {npc.name}");
+    }
+
+    /// <summary>
+    /// ✅ 强制离开：Resume + 禁用自己（防止下一帧又把 NPC 停住）
+    /// </summary>
+    public void ForceLeaveNow()
+    {
+        ResumeNpc();
+        enabled = false;
+
+        if (logDebug) Debug.Log("[StopByDistance] ForceLeaveNow -> ResumeNpc + disable StopByDistance");
     }
 
     private void TryFindClosestNpc()
@@ -165,17 +187,4 @@ public class StopByDistance : MonoBehaviour
             if (logDebug) Debug.Log($"[StopByDistance] Found NPC: {npc.name}");
         }
     }
-    
-    // 加在 StopByDistance 类里面（任意位置都行）
-    public void ForceLeaveNow()
-    {
-        // 1) 恢复移动
-        ResumeNpc();
-
-        // 2) 关键：禁用自己，防止下一帧又把 NPC 停住
-        enabled = false;
-
-        if (logDebug) Debug.Log("[StopByDistance] ForceLeaveNow -> resumed MovePath and disabled StopByDistance.");
-    }
-
 }
